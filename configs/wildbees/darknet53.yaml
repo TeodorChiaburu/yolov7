@@ -1,0 +1,50 @@
+_BASE_: "../Base-YOLOv7.yaml"
+MODEL:
+  WEIGHTS: ""
+  MASK_ON: False
+  BACKBONE:
+    NAME: "build_darknet_backbone"
+    
+  DARKNET:
+    WEIGHTS: "weights/yolov3.pt" # using pytorch weights from ultralytics's yolov3
+    DEPTH: 53
+    STEM_OUT_CHANNELS: 32
+    WEIGHTS: ""
+    OUT_FEATURES: ["dark3", "dark4", "dark5"]
+  YOLO:
+    ANCHORS:
+      [
+        [[116, 90], [156, 198], [373, 326]],
+        [[30, 61], [62, 45], [42, 119]],
+        [[10, 13], [16, 30], [33, 23]],
+      ]
+    CLASSES: 80
+    IN_FEATURES: ["dark3", "dark4", "dark5"]
+    CONF_THRESHOLD: 0.2
+    NMS_THRESHOLD: 0.1
+    IGNORE_THRESHOLD: 0.6
+    NECK:
+      TYPE: "fpn"
+      WITH_SPP: True
+DATASETS:
+  TRAIN: ("wildbees_train",)
+  TEST: ("wildbees_val",)
+
+SOLVER:
+  IMS_PER_BATCH: 32
+  BASE_LR: 0.01
+  WARMUP_ITERS: 5 #1500
+  STEPS: (10, 20) #(60000, 80000)
+  MAX_ITER: 30 #90000
+  CLIP_GRADIENTS:
+    ENABLED: True
+  CHECKPOINT_PERIOD: 1 #1000
+
+TEST:
+  EVAL_PERIOD: 3 #10000
+OUTPUT_DIR: "output/wildbees_darknet53"
+VIS_PERIOD: 10 #5000
+
+DATALOADER:
+  # proposals are part of the dataset_dicts, and take a lot of RAM
+  NUM_WORKERS: 2

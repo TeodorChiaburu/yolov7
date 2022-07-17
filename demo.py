@@ -235,7 +235,8 @@ if __name__ == "__main__":
                 out_path = args.output
         else:
             out_path = "frame"
-        cv2.imshow(out_path, res)
+        #cv2.imshow(out_path, res) # when computing on the server without GUI, disable imshow() and store result with imwrite()
+        cv2.imwrite(out_path, res)
 
         if iter.video_mode:
             cv2.waitKey(1)
