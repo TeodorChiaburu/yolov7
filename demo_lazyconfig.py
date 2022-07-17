@@ -72,7 +72,7 @@ class DefaultPredictor:
             c = time.time() - tic
             print('cost: {}, fps: {}'.format(c, 1/c))
             return predictions
-q
+
 
 def setup_cfg(cfg, args):
     # load config from file and command-line arguments
@@ -194,16 +194,16 @@ if __name__ == "__main__":
                 print('ori img shape: ', img.shape)
                 res = predictor(img)
                 res = vis_res_fast(res, img, metadata, colors)
-                # cv2.imshow('frame', res)
-                cv2.imshow('frame', res)
+                # cv2.imshow('frame', res)# when computing on the server without GUI, disable imshow() and store result with imwrite()
+                cv2.imwrite('frame', res)
                 if cv2.waitKey(0) & 0xFF == ord('q'):
                     break
         else:
             img = cv2.imread(args.input)
             res = predictor(img)
             res = vis_res_fast(res, img, metadata, colors)
-            # cv2.imshow('frame', res)
-            cv2.imshow('frame', res)
+            # cv2.imshow('frame', res) # when computing on the server without GUI, disable imshow() and store result with imwrite()
+            cv2.imwrite('frame', res)
             cv2.waitKey(0)
     elif args.webcam:
         print('Not supported.')
@@ -220,7 +220,7 @@ if __name__ == "__main__":
             # frame = cv2.resize(frame, (640, 640))
             res = predictor(frame)
             res = vis_res_fast(res, frame, metadata, colors)
-            # cv2.imshow('frame', res)
-            cv2.imshow('frame', res)
+            # cv2.imshow('frame', res) # when computing on the server without GUI, disable imshow() and store result with imwrite()
+            cv2.imwrite('frame', res)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
