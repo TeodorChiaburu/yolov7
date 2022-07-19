@@ -19,7 +19,7 @@ from detectron2.utils import comm
 from yolov7.config import add_yolo_config
 from yolov7.data.dataset_mapper import MyDatasetMapper2, MyDatasetMapper
 from yolov7.utils.allreduce_norm import all_reduce_norm
-
+from yolov7.evaluation.coco_evaluation import COCOMaskEvaluator
 
 """
 This using for train instance segmentation!
@@ -31,7 +31,7 @@ class Trainer(DefaultTrainer):
     def build_evaluator(cls, cfg, dataset_name, output_folder=None):
         if output_folder is None:
             output_folder = os.path.join(cfg.OUTPUT_DIR, "inference")
-        return COCOEvaluator(dataset_name, output_dir=output_folder)
+        return COCOMaskEvaluator(dataset_name, output_dir=output_folder)
 
     @classmethod
     def build_train_loader(cls, cfg):

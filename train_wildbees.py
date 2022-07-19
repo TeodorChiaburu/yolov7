@@ -13,8 +13,8 @@ from detectron2.engine import (
 from detectron2.data.datasets.coco import register_coco_instances
 
 # Which one should be used??
-from train_det import Trainer, setup
-#from train_inseg import Trainer, setup
+#from train_det import Trainer, setup
+from train_inseg import Trainer, setup
 #from train_transformer import Trainer, setup
 
 

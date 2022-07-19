@@ -161,6 +161,7 @@ def vis_res_fast(res, img, class_names, colors, thresh):
             img,
             clss,
             bit_masks,
+            class_names=class_names,
             force_colors=None,
             draw_contours=True,
             alpha=0.6,
