@@ -1,5 +1,4 @@
 """Code from https://github.com/hustvl/SparseInst/blob/8e75c646233822ee751253c799eb58226eb5f577/sparseinst/coco_evaluation.py#L24
-
 Models such as SparseInst are able to predict segmentation masks without predicting bounding boxes first.
 However, objects of class 'Instance' in detectrin2 require an attribute 'pred_boxes'.
 We overwrite here the function instances_to_coco_json to allow Instances without pred_boxes.
