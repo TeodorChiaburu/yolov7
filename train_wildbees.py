@@ -27,8 +27,8 @@ def register_custom_datasets():
     ANN_ROOT = "../beexplainable/metafiles/Bees_Christian/22_species"
     TRAIN_PATH = os.path.join(DATASET_ROOT, "Bees_Christian_train")
     VAL_PATH = os.path.join(DATASET_ROOT, "Bees_Christian_val")
-    TRAIN_JSON = os.path.join(ANN_ROOT, "bees_coco_train.json")
-    VAL_JSON = os.path.join(ANN_ROOT, "bees_coco_val.json")
+    TRAIN_JSON = os.path.join(ANN_ROOT, "bees_coco_train_1.json")
+    VAL_JSON = os.path.join(ANN_ROOT, "bees_coco_val_1.json")
     register_coco_instances("wildbees_train", {}, TRAIN_JSON, TRAIN_PATH)
     register_coco_instances("wildbees_val", {}, VAL_JSON, VAL_PATH)
 

@@ -1,7 +1,7 @@
 _BASE_: "Base-SparseInst.yaml"
 MODEL:
   BACKBONE:
-    FREEZE_AT: 2
+    #FREEZE_AT: 2
     NAME: "build_resnet_vd_backbone"
 INPUT:
   CROP:

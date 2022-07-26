@@ -25,8 +25,8 @@ def add_sparse_inst_config(cfg):
     # [Decoder]
     cfg.MODEL.SPARSE_INST.DECODER = CN()
     cfg.MODEL.SPARSE_INST.DECODER.NAME = "BaseIAMDecoder"
-    cfg.MODEL.SPARSE_INST.DECODER.NUM_MASKS = 100
-    cfg.MODEL.SPARSE_INST.DECODER.NUM_CLASSES = 22 #80
+    cfg.MODEL.SPARSE_INST.DECODER.NUM_MASKS = 5 #100
+    cfg.MODEL.SPARSE_INST.DECODER.NUM_CLASSES = 1 #22 #80
     # kernels for mask features
     cfg.MODEL.SPARSE_INST.DECODER.KERNEL_DIM = 128
     # upsample factor for output masks
@@ -47,11 +47,11 @@ def add_sparse_inst_config(cfg):
     cfg.MODEL.SPARSE_INST.LOSS.NAME = "SparseInstCriterion"
     cfg.MODEL.SPARSE_INST.LOSS.ITEMS = ("labels", "masks")
     # loss weight
-    cfg.MODEL.SPARSE_INST.LOSS.CLASS_WEIGHT = 2.0
+    cfg.MODEL.SPARSE_INST.LOSS.CLASS_WEIGHT = 1.0 #2.0
     cfg.MODEL.SPARSE_INST.LOSS.MASK_PIXEL_WEIGHT = 5.0
     cfg.MODEL.SPARSE_INST.LOSS.MASK_DICE_WEIGHT = 2.0
     # iou-aware objectness loss weight
-    cfg.MODEL.SPARSE_INST.LOSS.OBJECTNESS_WEIGHT = 1.0
+    cfg.MODEL.SPARSE_INST.LOSS.OBJECTNESS_WEIGHT = 2.0 #1.0
 
     # [Matcher]
     cfg.MODEL.SPARSE_INST.MATCHER = CN()
