@@ -22,4 +22,4 @@ INPUT:
   SHIFT:
     SHIFT_PIXELS: 32
   MASK_FORMAT: "bitmask" # for RLE format (must be same as in Base-SparseInst.yaml)
-OUTPUT_DIR: "output/wildbees_sparse_inst_r50vd_giam_aug"
+OUTPUT_DIR: "output/wildbees_sparse_inst_r50vd_giam_aug/8000eps"

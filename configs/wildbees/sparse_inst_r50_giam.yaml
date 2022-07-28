@@ -1,2 +1,0 @@
-_BASE_: "Base-SparseInst.yaml"
-OUTPUT_DIR: "output/sparse_inst_r50_giam"

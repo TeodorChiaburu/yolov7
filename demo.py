@@ -143,6 +143,7 @@ def vis_res_fast(res, img, class_names, colors, thresh):
         bboxes = ins.pred_boxes.tensor.cpu().numpy()
     scores = ins.scores.cpu().numpy()
     clss = ins.pred_classes.cpu().numpy()
+    clss = [int(c) for c in clss] # functions such as vis_bit_masks require integer class indexes
     if ins.has("pred_bit_masks"):
         bit_masks = ins.pred_bit_masks
         if isinstance(bit_masks, BitMasks):
@@ -150,7 +151,7 @@ def vis_res_fast(res, img, class_names, colors, thresh):
         # img = vis_bitmasks_with_classes(img, clss, bit_masks)
         # img = vis_bitmasks_with_classes(img, clss, bit_masks, force_colors=colors, mask_border_color=(255, 255, 255), thickness=2)
         img = vis_bitmasks_with_classes(
-            img, clss, bit_masks, force_colors=None, draw_contours=True, alpha=0.8
+            img, clss, bit_masks, class_names=class_names, force_colors=None, draw_contours=True, alpha=0.8
         )
 
     if ins.has("pred_masks"):
@@ -231,7 +232,8 @@ if __name__ == "__main__":
         # cv2.imshow('frame', res)
         if args.output:
             if pathlib.Path(args.output).is_dir():
-                out_path = pathlib.Path(args.output) / pathlib.Path(image_path).name
+                #out_path = pathlib.Path(args.output) / pathlib.Path(image_path).name
+                out_path = str( pathlib.Path(args.output) / pathlib.Path(image_path).name ) # cv2.imwrite needs str
             else:
                 out_path = args.output
         else:
