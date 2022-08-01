@@ -12,20 +12,14 @@ MODEL:
 
   YOLO:
     ANCHORS:
-      # yolomask anchors slightly different than YOLOv7
-      [
-        [142, 110],
-        [192, 243],
-        [459, 401],
+      # Default from COCO
+      #[[142, 110], [192, 243], [459, 401], [36, 75], [76, 55], [72, 146], [12, 16], [19, 36], [40, 28]]
 
-        [36, 75],
-        [76, 55],
-        [72, 146],
-        
-        [12, 16],
-        [19, 36],
-        [40, 28],
-      ]
+      # Half of COCO
+      [[71, 55], [96, 121], [230, 200], [18, 38], [38, 28], [36, 73], [6, 8], [10, 18], [20, 14]]
+
+      # Computed for wildbees_train in tools/compute_anchors.py
+      #[[745, 886], [902, 656], [659, 685], [739, 575], [513, 703], [639, 475], [391, 349], [286, 328], [347, 254]]
     ANCHOR_MASK: [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
     CLASSES: 1
     IN_FEATURES: ["dark2", "dark3", "dark4", "dark5"] # p3, p4, p5 from FPN
@@ -71,11 +65,11 @@ SOLVER:
   WARMUP_FACTOR: 0.00033333
   WARMUP_ITERS: 100 #1500
   MAX_ITER: 1000 #190000
-  LR_SCHEDULER_NAME: "WarmupCosineLR"
+  LR_SCHEDULER_NAME: "WarmupMultiStepLR" #"WarmupCosineLR"
 
 TEST:
-  EVAL_PERIOD: 500
-OUTPUT_DIR: "output/wildbees_yolomask"
+  EVAL_PERIOD: 200
+OUTPUT_DIR: "output/wildbees_yolomask/half_default_anchors"
 
 DATALOADER:
   # proposals are part of the dataset_dicts, and take a lot of RAM

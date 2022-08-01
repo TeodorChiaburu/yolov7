@@ -158,7 +158,7 @@ def load_dataset(path, types='voc'):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 1:
+    if len(sys.argv) < 2:
         print('Please send coco json annotation file as first param')
         exit(0)
     else:
