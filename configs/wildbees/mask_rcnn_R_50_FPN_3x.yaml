@@ -4,7 +4,7 @@ MODEL:
   MASK_ON: True
   RESNETS:
     DEPTH: 50
-OUTPUT_DIR: "output/wildbees_maskrcnn"
+OUTPUT_DIR: "output/wildbees_maskrcnn/whole_object/1600ep"
 #SOLVER:
 #  STEPS: (210000, 250000)
 #  MAX_ITER: 270000

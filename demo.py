@@ -1,5 +1,6 @@
 import argparse
 import multiprocessing as mp
+import os
 import pathlib
 import random
 import time
@@ -128,6 +129,12 @@ def get_parser():
         help="Name of Weights & Biases Entity.",
     )
     parser.add_argument(
+        "--cutoff",
+        default=False,
+        help="Whether to remove background around first segmentation above the conf. threshold. "
+             "If False, all the masks above the threshold are overlaid on the input image."
+    )
+    parser.add_argument(
         "--opts",
         help="Modify config options using the command-line 'KEY VALUE' pairs",
         default=[],
@@ -136,7 +143,7 @@ def get_parser():
     return parser
 
 
-def vis_res_fast(res, img, class_names, colors, thresh):
+def vis_res_fast(res, img, class_names, colors, thresh, cutoff):
     ins = res["instances"]
     bboxes = None
     if ins.has("pred_boxes"):
@@ -144,33 +151,52 @@ def vis_res_fast(res, img, class_names, colors, thresh):
     scores = ins.scores.cpu().numpy()
     clss = ins.pred_classes.cpu().numpy()
     clss = [int(c) for c in clss] # functions such as vis_bit_masks require integer class indexes
-    if ins.has("pred_bit_masks"):
-        bit_masks = ins.pred_bit_masks
-        if isinstance(bit_masks, BitMasks):
-            bit_masks = bit_masks.tensor.cpu().numpy()
-        # img = vis_bitmasks_with_classes(img, clss, bit_masks)
-        # img = vis_bitmasks_with_classes(img, clss, bit_masks, force_colors=colors, mask_border_color=(255, 255, 255), thickness=2)
-        img = vis_bitmasks_with_classes(
-            img, clss, bit_masks, class_names=class_names, force_colors=None, draw_contours=True, alpha=0.8
-        )
+    # if ins.has("pred_bit_masks"):
+    #     bit_masks = ins.pred_bit_masks
+    #     if isinstance(bit_masks, BitMasks):
+    #         bit_masks = bit_masks.tensor.cpu().numpy()
+    #     # img = vis_bitmasks_with_classes(img, clss, bit_masks)
+    #     # img = vis_bitmasks_with_classes(img, clss, bit_masks, force_colors=colors, mask_border_color=(255, 255, 255), thickness=2)
+    #     img = vis_bitmasks_with_classes(
+    #         img, clss, bit_masks, class_names=class_names, force_colors=colors, draw_contours=True, alpha=0.8
+    #     )
 
-    if ins.has("pred_masks"):
-        bit_masks = ins.pred_masks
-        if isinstance(bit_masks, BitMasks):
-            bit_masks = bit_masks.tensor.cpu().numpy()
-        img = vis_bitmasks_with_classes(
-            img,
-            clss,
-            bit_masks,
-            class_names=class_names,
-            force_colors=None,
-            draw_contours=True,
-            alpha=0.6,
-            thickness=2,
-        )
+    if ins.has("pred_masks") or ins.has("pred_bit_masks"):
+
+        bit_masks = ins.pred_masks if ins.has("pred_masks") else ins.pred_bit_masks
+
+        if cutoff:
+            if isinstance(bit_masks, BitMasks):
+                bit_masks = bit_masks.tensor.cpu().numpy()
+            else:
+                bit_masks = bit_masks.cpu().numpy()
+
+            if bit_masks.shape[0] != 0: # at least one mask predicted
+                bit_masks = bit_masks[-1] # only operate with the first mask above conf. threshold (it is sharper than the others)
+
+                import numpy as np
+                ind_mask = np.stack((bit_masks == 0, ) * 3, axis = -1)
+                img[ind_mask] = np.array([255], dtype=np.uint8)
+        else:
+            if isinstance(bit_masks, BitMasks):
+                bit_masks = bit_masks.tensor.cpu().numpy()
+
+            img = vis_bitmasks_with_classes(
+                img,
+                clss,
+                bit_masks,
+                class_names=class_names,
+                force_colors=colors,
+                draw_contours=True,
+                alpha=0.6,
+                thickness=2,
+            )
+
     thickness = 1 if ins.has("pred_bit_masks") else 2
     font_scale = 0.3 if ins.has("pred_bit_masks") else 0.4
-    if bboxes is not None:
+
+    # Visualize bboxes if they are predicted and user does not opt for cutting off segmented objects
+    if bboxes is not None and not cutoff:
         img = visualize_det_cv2_part(
             img,
             scores,
@@ -201,7 +227,8 @@ if __name__ == "__main__":
     print(cfg.INPUT.MIN_SIZE_TEST, cfg.INPUT.MIN_SIZE_TEST, cfg.INPUT.MAX_SIZE_TEST)
     colors = [
         [random.randint(0, 255) for _ in range(3)]
-        for _ in range(cfg.MODEL.YOLO.CLASSES)
+        #for _ in range(cfg.MODEL.YOLO.CLASSES)
+        for _ in range(len(class_names))
     ]
     conf_thresh = cfg.MODEL.YOLO.CONF_THRESHOLD
     print("confidence thresh: ", conf_thresh)
@@ -219,16 +246,22 @@ if __name__ == "__main__":
     else:
         inference_logger = None
 
+    imgs = iter.srcs
     for i in trange(len(iter.srcs)):
         im = next(iter)
         if isinstance(im, str):
             image_path = im
             im = cv2.imread(im)
             res = predictor(im)
+
+            # If no mask is predicted and user wants to remove background around masks, proceed to next image without just copying the input
+            if res["instances"]._fields["pred_masks"].shape[0] == 0 and args.cutoff:
+                continue
+
             if inference_logger:
                 inference_logger.log_inference(image_path, res)
 
-            res = vis_res_fast(res, im, class_names, colors, conf_thresh)
+            res = vis_res_fast(res, im, class_names, colors, conf_thresh, args.cutoff)
         # cv2.imshow('frame', res)
         if args.output:
             if pathlib.Path(args.output).is_dir():
