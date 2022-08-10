@@ -1,6 +1,6 @@
 import argparse
 import multiprocessing as mp
-import os
+import numpy as np
 import pathlib
 import random
 import time
@@ -67,9 +67,12 @@ def setup_cfg(args):
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
 
-    cfg.MODEL.YOLO.CONF_THRESHOLD = args.confidence_threshold
+    cfg.MODEL.YOLO.CONF_THRESHOLD = args.confidence_threshold # For SparseInst and YoloMask
     cfg.MODEL.YOLO.NMS_THRESHOLD = args.nms_threshold
     cfg.MODEL.YOLO.IGNORE_THRESHOLD = 0.1
+
+    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = args.confidence_threshold # for MaskRCNN
+
     # force devices based on user device
     cfg.MODEL.DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     cfg.INPUT.MAX_SIZE_TEST = 600  # 90ms
@@ -151,6 +154,7 @@ def vis_res_fast(res, img, class_names, colors, thresh, cutoff):
     scores = ins.scores.cpu().numpy()
     clss = ins.pred_classes.cpu().numpy()
     clss = [int(c) for c in clss] # functions such as vis_bit_masks require integer class indexes
+
     # if ins.has("pred_bit_masks"):
     #     bit_masks = ins.pred_bit_masks
     #     if isinstance(bit_masks, BitMasks):
@@ -172,9 +176,10 @@ def vis_res_fast(res, img, class_names, colors, thresh, cutoff):
                 bit_masks = bit_masks.cpu().numpy()
 
             if bit_masks.shape[0] != 0: # at least one mask predicted
-                bit_masks = bit_masks[-1] # only operate with the first mask above conf. threshold (it is sharper than the others)
 
-                import numpy as np
+                ind_mask = np.argmax(scores)
+                bit_masks = bit_masks[ind_mask] # only operate with the highest confidence mask
+
                 ind_mask = np.stack((bit_masks == 0, ) * 3, axis = -1)
                 img[ind_mask] = np.array([255], dtype=np.uint8)
         else:
@@ -230,7 +235,7 @@ if __name__ == "__main__":
         #for _ in range(cfg.MODEL.YOLO.CLASSES)
         for _ in range(len(class_names))
     ]
-    conf_thresh = cfg.MODEL.YOLO.CONF_THRESHOLD
+    conf_thresh = args.confidence_threshold #cfg.MODEL.YOLO.CONF_THRESHOLD
     print("confidence thresh: ", conf_thresh)
 
     iter = ImageSourceIter(args.input)
@@ -255,7 +260,7 @@ if __name__ == "__main__":
             res = predictor(im)
 
             # If no mask is predicted and user wants to remove background around masks, proceed to next image without just copying the input
-            if res["instances"]._fields["pred_masks"].shape[0] == 0 and args.cutoff:
+            if args.cutoff and res["instances"]._fields["pred_masks"].shape[0] == 0:
                 continue
 
             if inference_logger:
