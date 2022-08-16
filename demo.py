@@ -138,6 +138,11 @@ def get_parser():
              "If False, all the masks above the threshold are overlaid on the input image."
     )
     parser.add_argument(
+        "--crop_bbox",
+        default=False,
+        help="Whether to crop image to the predicted bounding box."
+    )
+    parser.add_argument(
         "--opts",
         help="Modify config options using the command-line 'KEY VALUE' pairs",
         default=[],
@@ -146,11 +151,9 @@ def get_parser():
     return parser
 
 
-def vis_res_fast(res, img, class_names, colors, thresh, cutoff):
+def vis_res_fast(res, img, class_names, colors, thresh, cutoff, crop_bbox):
     ins = res["instances"]
-    bboxes = None
-    if ins.has("pred_boxes"):
-        bboxes = ins.pred_boxes.tensor.cpu().numpy()
+
     scores = ins.scores.cpu().numpy()
     clss = ins.pred_classes.cpu().numpy()
     clss = [int(c) for c in clss] # functions such as vis_bit_masks require integer class indexes
@@ -183,25 +186,33 @@ def vis_res_fast(res, img, class_names, colors, thresh, cutoff):
                 ind_mask = np.stack((bit_masks == 0, ) * 3, axis = -1)
                 img[ind_mask] = np.array([255], dtype=np.uint8)
         else:
-            if isinstance(bit_masks, BitMasks):
-                bit_masks = bit_masks.tensor.cpu().numpy()
+            if not crop_bbox:
+                if isinstance(bit_masks, BitMasks):
+                    bit_masks = bit_masks.tensor.cpu().numpy()
 
-            img = vis_bitmasks_with_classes(
-                img,
-                clss,
-                bit_masks,
-                class_names=class_names,
-                force_colors=colors,
-                draw_contours=True,
-                alpha=0.6,
-                thickness=2,
-            )
+                img = vis_bitmasks_with_classes(
+                    img,
+                    clss,
+                    bit_masks,
+                    class_names=class_names,
+                    force_colors=colors,
+                    draw_contours=True,
+                    alpha=0.6,
+                    thickness=2,
+                )
 
     thickness = 1 if ins.has("pred_bit_masks") else 2
     font_scale = 0.3 if ins.has("pred_bit_masks") else 0.4
 
-    # Visualize bboxes if they are predicted and user does not opt for cutting off segmented objects
-    if bboxes is not None and not cutoff:
+    bboxes = None
+    if ins.has("pred_boxes"):
+        bboxes = ins.pred_boxes.tensor.cpu().numpy()
+
+        if crop_bbox:
+            img = img[int(bboxes[0][1]) : int(bboxes[0][3]), int(bboxes[0][0]) : int(bboxes[0][2]), :]
+
+    # Visualize bboxes if they are predicted and user does not opt for cutting off segmented objects or cropping to bbox
+    if bboxes is not None and not cutoff and not crop_bbox:
         img = visualize_det_cv2_part(
             img,
             scores,
@@ -262,11 +273,14 @@ if __name__ == "__main__":
             # If no mask is predicted and user wants to remove background around masks, proceed to next image without just copying the input
             if args.cutoff and res["instances"]._fields["pred_masks"].shape[0] == 0:
                 continue
+            # If no bbox is predicted and user wants to crop to bbox, proceed to next image without just copying the input
+            if args.crop_bbox and len(res["instances"]._fields["pred_boxes"]) == 0:
+                continue
 
             if inference_logger:
                 inference_logger.log_inference(image_path, res)
 
-            res = vis_res_fast(res, im, class_names, colors, conf_thresh, args.cutoff)
+            res = vis_res_fast(res, im, class_names, colors, conf_thresh, args.cutoff, args.crop_bbox)
         # cv2.imshow('frame', res)
         if args.output:
             if pathlib.Path(args.output).is_dir():
